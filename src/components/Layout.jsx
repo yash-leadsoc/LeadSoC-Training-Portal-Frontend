@@ -62,9 +62,13 @@ export default function Layout({ children }) {
           ))}
         </nav>
         <div className="side-foot">
-          Signed in as
+            Signed in as
           <br />
+          <div className="side-foot1">
+          
           <b style={{ color: '#dfe5f5' }}>{user.name}</b>
+          <button className="logout" onClick={logout} title="Sign out">⏻</button>
+          </div>
         </div>
       </aside>
 
@@ -79,7 +83,7 @@ export default function Layout({ children }) {
           </div>
           <div className="userchip">
             <div className="stack hide-mobile" style={{ alignItems: 'flex-end', lineHeight: 1.2 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 600 }}>{user.name}</span>
+              {/* <span style={{ fontSize: 13.5, fontWeight: 600 }}>{user.name}</span> */}
               <span style={{ fontSize: 11.5, color: 'var(--muted)' }}>{user.email}</span>
             </div>
             <div className="avatar" title={user.name}>
