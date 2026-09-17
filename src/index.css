@@ -199,7 +199,7 @@ table.data tr:hover td { background: #fafbfe; }
 
 /* ---------- modal ---------- */
 .modal-overlay { position: fixed; inset:0; background: rgba(16,26,56,.5); backdrop-filter: blur(3px); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
-.modal { background:#fff; border-radius:18px; box-shadow: var(--shadow-lg); width:100%; max-width:520px; max-height:90vh; overflow:auto; }
+.modal { background:#fff; border-radius:18px; box-shadow: var(--shadow-lg); width:100%; max-width:1400px; max-height:90vh; overflow:auto; }
 .modal-head { display:flex; align-items:center; padding:20px 22px; border-bottom:1px solid var(--border); }
 .modal-head h3 { margin:0; font-size:17px; font-weight:700; color:var(--navy); }
 .modal-body { padding:22px; }
