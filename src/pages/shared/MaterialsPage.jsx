@@ -314,13 +314,13 @@ export default function MaterialsPage() {
                     👁
                   </Button>
 
-                  <Button
+                  {/* <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => download(doc)}
                   >
                     &#x2913;
-                  </Button>
+                  </Button> */}
 
                   <Button
                     variant="danger"
@@ -463,38 +463,27 @@ function FilePreviewModal({ doc, onClose }) {
       .pop()
       ?.toLowerCase() || '';
 
-  useEffect(() => {
-    let objectUrl = '';
+ useEffect(() => {
+  try {
+    setLoading(true);
+    setError('');
 
-    const loadPreview = async () => {
-      try {
-        setLoading(true);
-        setError('');
+    if (!doc.cloudinaryUrl) {
+      throw new Error('Cloudinary PDF URL not found');
+    }
 
-        const url = await api.previewDocument({
-          id: uid(doc),
-        });
+    // Directly use the PDF stored in Cloudinary
+    setPreviewUrl(doc.cloudinaryUrl);
 
-        objectUrl = url;
-        setPreviewUrl(url);
-      } catch (e) {
-        console.error('Preview error:', e);
-        setError(
-          e.message || 'Unable to preview file'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPreview();
-
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [doc]);
+  } catch (e) {
+    console.error('Preview error:', e);
+    setError(
+      e.message || 'Unable to preview file'
+    );
+  } finally {
+    setLoading(false);
+  }
+}, [doc]);
 
   const isPdf = extension === 'pdf';
 
@@ -574,7 +563,7 @@ function FilePreviewModal({ doc, onClose }) {
         previewUrl &&
         (isPdf || isOffice) && (
           <iframe
-            src={previewUrl}
+            src={`${previewUrl}#toolbar=0`}
             title={doc.title}
             style={{
               width: '100%',

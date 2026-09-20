@@ -138,7 +138,8 @@
 // }
 
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://leadsoc-training-portal-1.onrender.com/api';
+// const API_URL = import.meta.env.VITE_API_URL || 'https://leadsoc-training-portal-1.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 let token = localStorage.getItem('ls_token') || null;
 
@@ -198,9 +199,11 @@ export const api = {
   listManagers: () => get('/users/managers'),
   getUser: (id) => get(`/users/${id}`),
   setUserActive: (id, active) => patch(`/users/${id}/active`, { active }),
+  
 
   // domains
   listDomains: () => get('/domains'),
+  assignUserDomains: (id, domainIds) => patch(`/users/${id}/domains`, { domainIds }),
   createDomain: (key, name, description, icon) => post('/domains', { key, name, description, icon }),
 
   // documents
@@ -256,28 +259,27 @@ export const api = {
   },
 
   previewDocument: async (doc) => {
-    const res = await fetch(
-      `${API_URL}/documents/${doc.id}/preview`,
-      {
-        headers: headers(false),
-      }
-    );
-
-    if (!res.ok) {
-      let message = `Preview failed (${res.status})`;
-
-      try {
-        const body = await res.json();
-        message = body?.message || message;
-      } catch { }
-
-      throw new Error(message);
+  const res = await fetch(
+    `${API_URL}/documents/${doc.id}/preview`,
+    {
+      headers: headers(false),
+      redirect: 'follow',
     }
+  );
 
-    const blob = await res.blob();
+  if (!res.ok) {
+    let message = `Preview failed (${res.status})`;
 
-    return URL.createObjectURL(blob);
-  },
+    try {
+      const body = await res.json();
+      message = body?.message || message;
+    } catch {}
+
+    throw new Error(message);
+  }
+
+  return res.url;
+},
 
   previewUrl: (id) => `${API_URL}/documents/${id}/preview`,
 

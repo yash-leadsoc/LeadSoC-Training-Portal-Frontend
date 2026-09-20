@@ -10,6 +10,13 @@ export default function EmployeeDetail() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const { toastError } = useToast();
+  const [allDomains, setAllDomains] = useState([]);
+  const [selectedDomains, setSelectedDomains] = useState([]);
+  const [showDomainModal, setShowDomainModal] = useState(false);
+  const [savingDomains, setSavingDomains] = useState(false);
+
+
+
 
   useEffect(() => {
     (async () => {
@@ -23,18 +30,93 @@ export default function EmployeeDetail() {
     })(); // eslint-disable-next-line
   }, [id]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await api.listDomains();
+        setAllDomains(result);
+      } catch (e) {
+        toastError(e);
+      }
+    })();
+  }, []);
+
   if (loading) return <LoadingPage />;
   if (!data) return <Empty>Engineer not found.</Empty>;
 
   const { user, progress, summary } = data;
-  const domains = Object.values(progress);
+
+  const domains = Object.values(progress || {});
+
+  const assignedDomainIds = (user.assignedDomains || []).map((domain) =>
+    typeof domain === 'string'
+      ? domain
+      : domain._id || domain.id
+  );
+
+  const openDomainModal = () => {
+    setSelectedDomains(assignedDomainIds);
+    setShowDomainModal(true);
+  };
+
+  const toggleDomain = (domainId) => {
+    setSelectedDomains((current) => {
+      if (current.includes(domainId)) {
+        return current.filter((id) => id !== domainId);
+      }
+
+      return [...current, domainId];
+    });
+  };
+
+  const saveDomains = async () => {
+    try {
+      setSavingDomains(true);
+
+      await api.assignUserDomains(id, selectedDomains);
+
+      // Update local employee data immediately
+      setData((current) => ({
+        ...current,
+        user: {
+          ...current.user,
+          assignedDomains: selectedDomains,
+        },
+      }));
+
+      setShowDomainModal(false);
+    } catch (e) {
+      toastError(e);
+    } finally {
+      setSavingDomains(false);
+    }
+  };
 
   return (
     <>
       <button className="btn link" onClick={() => nav(-1)} style={{ marginBottom: 12 }}>← Back</button>
-      <div className="page-head">
-        <h1>{user.name}</h1>
-        <p>{user.email} · {user.employeeCode}</p>
+      <div
+        className="page-head"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 20,
+        }}
+      >
+        <div>
+          <h1>{user.name}</h1>
+          <p>
+            {user.email} · {user.employeeCode}
+          </p>
+        </div>
+
+        <button
+          className="btn"
+          onClick={openDomainModal}
+        >
+          Assign Domains
+        </button>
       </div>
 
       <div className="grid grid-4">
@@ -67,6 +149,156 @@ export default function EmployeeDetail() {
           );
         })}
       </div>
+
+
+
+      {showDomainModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 20,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: 500,
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              padding: 24,
+            }}
+          >
+            <div
+              className="row"
+              style={{
+                justifyContent: 'space-between',
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <h2 style={{ margin: 0 }}>
+                  Assign Domains
+                </h2>
+
+                <p className="muted">
+                  Select domains for {user.name}
+                </p>
+              </div>
+
+              <button
+                className="btn link"
+                onClick={() => setShowDomainModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              {allDomains.length === 0 ? (
+                <p className="muted">
+                  No domains available.
+                </p>
+              ) : (
+                allDomains.map((domain) => {
+                  const domainId = domain._id || domain.id;
+
+                  const isSelected =
+                    selectedDomains.includes(domainId);
+
+                  return (
+                    <label
+                      key={domainId}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: 14,
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() =>
+                          toggleDomain(domainId)
+                        }
+                      />
+
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                          }}
+                        >
+                          {domain.name}
+                        </div>
+
+                        {domain.description && (
+                          <div
+                            className="muted"
+                            style={{
+                              fontSize: 12,
+                              marginTop: 3,
+                            }}
+                          >
+                            {domain.description}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+
+            <div
+              className="row"
+              style={{
+                justifyContent: 'flex-end',
+                gap: 10,
+                marginTop: 20,
+              }}
+            >
+              <button
+                className="btn"
+                onClick={() =>
+                  setShowDomainModal(false)
+                }
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn primary"
+                onClick={saveDomains}
+                disabled={savingDomains}
+              >
+                {savingDomains
+                  ? 'Saving...'
+                  : 'Save Domains'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
     </>
   );
 }
