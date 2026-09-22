@@ -19,7 +19,7 @@ export default function EmployeeDomains() {
         try {
           const p = await api.myProgress();
           setProgress(p.progress);
-        } catch {}
+        } catch { }
       } catch (e) {
         toastError(e);
       } finally {
@@ -40,20 +40,137 @@ export default function EmployeeDomains() {
         <Empty>No domains available yet.</Empty>
       ) : (
         <div className="grid grid-auto">
-          {domains.map((d) => {
-            const pct = progress[d.key]?.overall ?? 0;
+          {/* {domains.map((domain) => {
+            const locked = !domain.assigned;
+
             return (
-              <div key={uid(d)} className="card card-hover" style={{ cursor: 'pointer' }} onClick={() => nav(`/domain/${uid(d)}`)}>
-                <div style={{ fontSize: 30 }}>{d.icon}</div>
-                <div style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 16, marginTop: 10 }}>{d.name}</div>
-                <div className="muted" style={{ fontSize: 12.5, marginTop: 2, minHeight: 32 }}>{d.description}</div>
-                <div className="track" style={{ marginTop: 8 }}>
-                  <div className="fill" style={{ width: `${pct}%` }} />
+              <div
+                key={domain._id}
+                className="card"
+                onClick={() => {
+                  if (locked) return;
+
+                  nav(`/domains/${domain._id}`);
+                }}
+                style={{
+                  cursor: locked ? 'not-allowed' : 'pointer',
+                  opacity: locked ? 0.55 : 1,
+                  position: 'relative',
+                }}
+              >
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <h3>{domain.name}</h3>
+
+                  {locked ? (
+                    <span>🔒 Locked</span>
+                  ) : (
+                    <span>✓ Assigned</span>
+                  )}
                 </div>
-                <div className="muted" style={{ fontSize: 11.5, marginTop: 5 }}>{pct}% complete</div>
+
+                <p>{domain.description}</p>
+
+                {locked && (
+                  <div className="muted">
+                    This domain has not been assigned to you.
+                  </div>
+                )}
               </div>
             );
-          })}
+          })} */}
+
+         {[...domains]
+  .sort((a, b) => {
+    // Assigned domains first
+    if (a.assigned && !b.assigned) return -1;
+    if (!a.assigned && b.assigned) return 1;
+    return 0;
+  })
+  .map((d) => {
+    const locked = !d.assigned;
+    const pct = progress[d.key]?.overall ?? 0;
+
+    return (
+      <div
+        key={uid(d)}
+        className="card card-hover"
+        onClick={() => {
+          if (locked) return;
+
+          nav(`/domain/${uid(d)}`);
+        }}
+        style={{
+          cursor: locked ? 'not-allowed' : 'pointer',
+          opacity: locked ? 0.3 : 1,
+          position: 'relative',
+        }}
+      >
+        <div
+          className="row"
+          style={{
+            justifyContent: 'space-between',
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 700,
+              color: 'var(--navy)',
+              fontSize: 16,
+              marginTop: 10,
+            }}
+          >
+            {d.name}
+          </div>
+
+          {locked ? (
+            <span>🔒</span>
+          ) : (
+            <span>✓</span>
+          )}
+        </div>
+
+        <div
+          className="muted"
+          style={{
+            fontSize: 12.5,
+            marginTop: 2,
+            minHeight: 32,
+          }}
+        >
+          {d.description}
+        </div>
+
+        <div
+          className="track"
+          style={{
+            marginTop: 8,
+          }}
+        >
+          <div
+            className="fill"
+            style={{
+              width: `${pct}%`,
+            }}
+          />
+        </div>
+
+        <div
+          className="muted"
+          style={{
+            fontSize: 11.5,
+            marginTop: 5,
+          }}
+        >
+          {pct}% complete
+        </div>
+      </div>
+    );
+  })}
         </div>
       )}
     </>

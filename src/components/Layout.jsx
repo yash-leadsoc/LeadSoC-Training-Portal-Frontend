@@ -9,17 +9,20 @@ const NAV = {
     { to: '/people', label: 'People', icon: '👥' },
     { to: '/materials', label: 'Materials', icon: '📁' },
     { to: '/domains', label: 'Domains', icon: '🗂️' },
+    { to: '/community', label: 'Community', icon: '💬' },
     { to: '/account', label: 'Account', icon: '⚙️' },
   ],
   manager: [
     { to: '/', label: 'Dashboard', icon: '📊', end: true },
     { to: '/people', label: 'My Team', icon: '👥' },
     { to: '/materials', label: 'Materials', icon: '📁' },
+    { to: '/community', label: 'Community', icon: '💬' },
     { to: '/account', label: 'Account', icon: '⚙️' },
   ],
   employee: [
     { to: '/', label: 'Domains', icon: '🎯', end: true },
     { to: '/progress', label: 'My Progress', icon: '📈' },
+    { to: '/community', label: 'Community', icon: '💬' },
     { to: '/account', label: 'Account', icon: '⚙️' },
   ],
 };

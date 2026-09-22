@@ -61,10 +61,10 @@ export default function MyProgress() {
                   {d.overall == null ? 'Not started' : `${d.overall}%`}
                 </span>
               </div>
-              <ProgressRow label="Tool" value={d.tool} />
-              <ProgressRow label="Concepts" value={d.concepts} />
-              <ProgressRow label="Practical" value={d.practical} />
-              <ProgressRow label="Advanced" value={d.advanced} />
+              <ProgressRow label="Training" value={d.materialsPct} />
+              <ProgressRow label="Concept" value={d.checklistPct} />
+              <ProgressRow label="Writeup" value={d.writeupPct} />
+              <ProgressRow label="Exercise" value={d.pptPct} />
             </div>
           );
         })}

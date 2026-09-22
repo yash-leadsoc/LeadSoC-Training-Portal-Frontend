@@ -12,9 +12,17 @@ const CATS = [
 ];
 const CAT_SHORT = ['T', 'C', 'P', 'A'];
 
+const AREAS = [
+  ['materials', 'Training'],
+  ['checklist', 'Concept'],
+  ['writeup', 'Writeup'],
+  ['ppt', 'Exercise'],
+];
+
 export default function CohortDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [areaDomain, setAreaDomain] = useState('all');
   const { toastError } = useToast();
   const nav = useNavigate();
 
@@ -34,8 +42,8 @@ export default function CohortDashboard() {
 
   if (loading) return <LoadingPage />;
   if (!data) return <Empty>No data available.</Empty>;
-
-  const { kpis, rows, domainAverages, categoryAverages, flagged } = data;
+  const { kpis, rows, domainAverages, areaAverages = {}, areaAveragesByDomain = {}, areaDomains = [], flagged } = data;
+  const areaVals = areaDomain === 'all' ? areaAverages : (areaAveragesByDomain[areaDomain] || {});
   const domainKeys = rows.length ? Object.keys(rows[0].domains) : [];
 
   return (
@@ -61,9 +69,17 @@ export default function CohortDashboard() {
           ))}
         </div>
         <div className="card pad-lg">
-          <div className="section-title" style={{ margin: '0 0 14px' }}>Average completion by category</div>
-          {CATS.map(([k, label]) => (
-            <ProgressRow key={k} label={label} value={categoryAverages[k] ?? 0} />
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', margin: '0 0 14px' }}>
+            <div className="section-title" style={{ margin: 0 }}>Average completion</div>
+            <select className="select" style={{ maxWidth: 200 }} value={areaDomain} onChange={(e) => setAreaDomain(e.target.value)}>
+              <option value="all">All domains</option>
+              {areaDomains.map((d) => (
+                <option key={d.key} value={d.key}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+          {AREAS.map(([k, label]) => (
+            <ProgressRow key={k} label={label} value={areaVals[k] ?? 0} />
           ))}
         </div>
       </div>
