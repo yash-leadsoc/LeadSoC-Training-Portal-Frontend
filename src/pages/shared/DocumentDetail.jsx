@@ -672,7 +672,7 @@ export default function DocumentDetail() {
   const [checklists, setChecklists] = useState([]);
   const [writeups, setWriteups] = useState([]);
   const [loading, setLoading] = useState(true);
-   const [previewDoc, setPreviewDoc] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
   const [modal, setModal] = useState(null); // 'checklist' | 'writeup'
   const { toast, toastError } = useToast();
 
@@ -772,13 +772,14 @@ export default function DocumentDetail() {
       )}
 
       {modal === 'checklist' && (
-        <ChecklistModal documentId={uid(doc)} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); }} />
+        <ChecklistModal domainId={doc.domain?._id || doc.domain} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); }} />
+
       )}
       {modal === 'writeup' && (
         <WriteupModal documentId={uid(doc)} onClose={() => setModal(null)} onDone={() => { setModal(null); load(); }} />
       )}
 
-       {previewDoc && (
+      {previewDoc && (
         <div
           style={{
             position: 'fixed',
@@ -906,7 +907,7 @@ function parseChecklistRows(rows) {
   return sections;
 }
 
-function ChecklistModal({ documentId, onClose, onDone }) {
+export function ChecklistModal({ documentId, domainId, onClose, onDone }) {
   const [title, setTitle] = useState('Tool & concept checklist');
   const [sections, setSections] = useState([blankSection()]);
   const [busy, setBusy] = useState(false);
@@ -975,13 +976,13 @@ function ChecklistModal({ documentId, onClose, onDone }) {
         i !== si
           ? s
           : {
-              ...s,
-              topics: s.topics.map((t, j) =>
-                j !== ti
-                  ? t
-                  : { ...t, items: t.items.map((it, k) => (k === ii ? { ...it, text: value } : it)) }
-              ),
-            }
+            ...s,
+            topics: s.topics.map((t, j) =>
+              j !== ti
+                ? t
+                : { ...t, items: t.items.map((it, k) => (k === ii ? { ...it, text: value } : it)) }
+            ),
+          }
       )
     );
   const addItem = (si, ti) =>
@@ -990,9 +991,9 @@ function ChecklistModal({ documentId, onClose, onDone }) {
         i !== si
           ? s
           : {
-              ...s,
-              topics: s.topics.map((t, j) => (j !== ti ? t : { ...t, items: [...t.items, { text: '' }] })),
-            }
+            ...s,
+            topics: s.topics.map((t, j) => (j !== ti ? t : { ...t, items: [...t.items, { text: '' }] })),
+          }
       )
     );
   const removeItem = (si, ti, ii) =>
@@ -1001,11 +1002,11 @@ function ChecklistModal({ documentId, onClose, onDone }) {
         i !== si
           ? s
           : {
-              ...s,
-              topics: s.topics.map((t, j) =>
-                j !== ti ? t : { ...t, items: t.items.filter((_, k) => k !== ii) }
-              ),
-            }
+            ...s,
+            topics: s.topics.map((t, j) =>
+              j !== ti ? t : { ...t, items: t.items.filter((_, k) => k !== ii) }
+            ),
+          }
       )
     );
 
@@ -1036,7 +1037,8 @@ function ChecklistModal({ documentId, onClose, onDone }) {
     }
     setBusy(true);
     try {
-      await api.createChecklist(title.trim(), documentId, clean);
+      await api.createChecklist(title.trim(), domainId || undefined, clean);
+      // if you still support documents: pass documentId when domainId is absent
       toast('Checklist created');
       onDone();
     } catch (e) {
@@ -1201,7 +1203,7 @@ function ChecklistModal({ documentId, onClose, onDone }) {
   );
 }
 
-function WriteupModal({ documentId, onClose, onDone }) {
+export function WriteupModal({ documentId, domainId, onClose, onDone }) {
   const [title, setTitle] = useState('Write-up questions');
   const [qs, setQs] = useState([{ text: '', section: 'General' }]);
   const [busy, setBusy] = useState(false);
@@ -1219,7 +1221,7 @@ function WriteupModal({ documentId, onClose, onDone }) {
     }
     setBusy(true);
     try {
-      await api.createWriteup(title.trim(), documentId, clean);
+      await api.createWriteup(title.trim(),  domainId, cleanQuestions);
       toast('Write-up created');
       onDone();
     } catch (e) {

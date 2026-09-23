@@ -531,6 +531,7 @@ export const api = {
   listDomains: () => get('/domains'),
   assignUserDomains: (id, domainIds) => patch(`/users/${id}/domains`, { domainIds }),
   createDomain: (key, name, description, icon) => post('/domains', { key, name, description, icon }),
+  deleteDomain: (id) => del(`/domains/${id}`),
 
   // documents
   listDocuments: (domainId) => get(`/documents${domainId ? `?domainId=${domainId}` : ''}`),
@@ -607,20 +608,20 @@ export const api = {
     return res.url;
   },
 
-submitPptSubmission: (domainId, exerciseName, googleDriveLink) =>
-  post('/ppt-submissions', {
-    domainId,
-    exerciseName,
-    googleDriveLink,
-  }),
+  submitPptSubmission: (domainId, exerciseName, googleDriveLink) =>
+    post('/ppt-submissions', {
+      domainId,
+      exerciseName,
+      googleDriveLink,
+    }),
 
   getEmployeePptSubmissions: (employeeId) =>
-  get(`/ppt-submissions/employee/${employeeId}`),
+    get(`/ppt-submissions/employee/${employeeId}`),
 
 
   createMaterialLink: ({ title, description, domainId, type, url, html }) =>
-  post('/documents/link', { title, description, domainId, type, url, html }),
-  
+    post('/documents/link', { title, description, domainId, type, url, html }),
+
   previewUrl: (id) => `${API_URL}/documents/${id}/preview`,
 
   // checklists
@@ -631,11 +632,14 @@ submitPptSubmission: (domainId, exerciseName, googleDriveLink) =>
   saveChecklistResponse: (id, responses) => put(`/checklists/${id}/my-response`, { responses }),
 
   // writeups
-  createWriteup: (title, documentId, questions) => post('/writeups', { title, documentId, questions }),
+  // createWriteup: (title, documentId, questions) => post('/writeups', { title, documentId, questions }),
   writeupsForDocument: (documentId) => get(`/writeups/by-document/${documentId}`),
   deleteWriteup: (id) => del(`/writeups/${id}`),
   myWriteupAnswer: (id) => get(`/writeups/${id}/my-answer`),
   saveWriteupAnswer: (id, answers) => put(`/writeups/${id}/my-answer`, { answers }),
+  writeupForDomain: (domainId) => get(`/writeups/domain/${domainId}`),
+createWriteup: (title, domainId, questions) => post('/writeups', { title, domainId, questions }),
+deleteWriteup: (id) => del(`/writeups/${id}`),
 
   // tracking
   myProgress: () => get('/tracking/me'),
@@ -643,15 +647,20 @@ submitPptSubmission: (domainId, exerciseName, googleDriveLink) =>
   cohort: () => get('/tracking/cohort'),
 
 
-    // community Q&A
+  // community Q&A
   listQuestions: () => get('/qa/questions'),
   getQuestion: (id) => get(`/qa/questions/${id}`),
   createQuestion: (title, body) => post('/qa/questions', { title, body }),
   createAnswer: (id, body) => post(`/qa/questions/${id}/answers`, { body }),
-  deleteQuestion: (id) => del(`/qa/questions/${id}`),
+  deleteQuestion: (id) => del(`/qa/que  stions/${id}`),
   deleteAnswer: (id) => del(`/qa/answers/${id}`),
 
-  
+  // createChecklist: (title, domainId, items) => post('/checklists', { title, domainId, items }),
+  checklistForDomain: (domainId) => get(`/checklists/domain/${domainId}`),
+  updateChecklist: (id, title, items) => put(`/checklists/${id}`, { title, items }),
+  deleteChecklist: (id) => del(`/checklists/${id}`),
+  // api/client.js
+createChecklist: (title, domainId, items) => post('/checklists', { title, domainId, items }),
 };
 
 // normalize the various id fields the backend returns

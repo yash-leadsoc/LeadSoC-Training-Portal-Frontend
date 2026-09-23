@@ -661,6 +661,53 @@ import {
 } from '../../components/ui';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../auth/AuthContext';
+import { ChecklistModal, WriteupModal } from './DocumentDetail';
+
+
+function ConfirmModal({ title = 'Are you sure?', message, confirmLabel = 'Delete', onConfirm, onClose, busy }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15, 23, 42, 0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 420,
+          maxWidth: '90vw',
+          background: '#fff',
+          borderRadius: 14,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #eef2f7' }}>
+          <div style={{ fontSize: 16, fontWeight: 750, color: 'var(--navy, #102a56)' }}>{title}</div>
+        </div>
+
+        <div style={{ padding: '18px 20px' }}>
+          <p style={{ fontSize: 14, color: '#334155', margin: 0, lineHeight: 1.5 }}>{message}</p>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #eef2f7' }}>
+          <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button variant="danger" onClick={onConfirm} disabled={busy}>
+            {busy ? <Spinner sm /> : confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const fileIcon = (name = '') => {
   const e = name.split('.').pop()?.toLowerCase() || '';
@@ -685,9 +732,21 @@ export default function MaterialsPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [previewDoc, setPreviewDoc] = useState(null);
 
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [domainChecklist, setDomainChecklist] = useState(null);
+  const [showChecklistForm, setShowChecklistForm] = useState(false);
+
+
+  const [showWriteup, setShowWriteup] = useState(false);
+  const [domainWriteup, setDomainWriteup] = useState(null);
+  const [showWriteupForm, setShowWriteupForm] = useState(false);
+
+  const [confirm, setConfirm] = useState(null); // { message, onConfirm }
   const { toast, toastError } = useToast();
   const nav = useNavigate();
   const { user } = useAuth();
+
+  const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
 
   /*
    * ---------------------------------------------------------
@@ -746,6 +805,16 @@ export default function MaterialsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
+  useEffect(() => {
+    if (!filter) { setDomainWriteup(null); return; }
+    api.writeupForDomain(filter).then(r => setDomainWriteup(r.writeup)).catch(() => setDomainWriteup(null));
+  }, [filter]);
+
+  useEffect(() => {
+    if (!filter) { setDomainChecklist(null); return; }
+    api.checklistForDomain(filter).then(r => setDomainChecklist(r.checklist)).catch(() => setDomainChecklist(null));
+  }, [filter]);
+
   /*
    * ---------------------------------------------------------
    * DEBUG API
@@ -775,14 +844,14 @@ export default function MaterialsPage() {
    * ---------------------------------------------------------
    */
   const remove = async (doc) => {
-    if (!window.confirm('Archive this material?')) {
+    if (!window.confirm('Delete this material?')) {
       return;
     }
 
     try {
       await api.deleteDocument(uid(doc));
 
-      toast('Material archived');
+      toast('Material deleted');
 
       await load();
     } catch (e) {
@@ -858,6 +927,8 @@ export default function MaterialsPage() {
           + Upload material
         </Button>
 
+
+
         {String(user?.role || '').toLowerCase() === 'admin' && (
           <Button
             variant="danger"
@@ -895,6 +966,89 @@ export default function MaterialsPage() {
         })}
       </div>
 
+      {filter && (
+        <section className="card" style={{ padding: 18, margin: '16px 0' }}>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 750, color: 'var(--navy)' }}>
+                ☑️ {domains.find((d) => uid(d) === filter)?.name || ' '} Checklist
+              </div>
+              <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>
+                {domainChecklist
+                  ? `${domainChecklist.title} · ${(domainChecklist.items || []).length} items`
+                  : 'No checklist for this domain yet.'}
+              </div>
+            </div>
+
+            <div className="row gap-8">
+              {domainChecklist ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => setShowChecklist(true)}>👁 View</Button>
+                  {isAdmin && (
+                    <Button variant="danger" size="sm" onClick={() => setConfirm({
+                      message: 'Do you really want to delete this checklist? This cannot be undone.',
+                      onConfirm: async () => {
+                        try {
+                          await api.deleteChecklist(domainChecklist._id);
+                          setDomainChecklist(null);
+                          toast('Checklist deleted');
+                        } catch (e) { toastError(e); }
+                        finally { setConfirm(null); }
+                      },
+                    })}>Delete</Button>
+                  )}
+                </>
+              ) : (
+                <Button variant="cyan" size="sm" onClick={() => setShowChecklistForm(true)}>+ Add checklist</Button>
+              )}
+            </div>
+          </div>
+
+
+        </section>
+      )}
+
+      {filter && (
+        <section className="card" style={{ padding: 18, margin: '16px 0' }}>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 750, color: 'var(--navy)' }}>
+                ✍️ {domains.find((d) => uid(d) === filter)?.name || 'Domain'} write-up
+              </div>
+              <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>
+                {domainWriteup
+                  ? `${domainWriteup.title} · ${(domainWriteup.questions || []).length} questions`
+                  : 'No write-up for this domain yet.'}
+              </div>
+            </div>
+            <div className="row gap-8">
+              {domainWriteup ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => setShowWriteup(true)}>👁 View</Button>
+                  {isAdmin && (
+                    <Button variant="danger" size="sm" onClick={() => setConfirm({
+                      message: 'Do you really want to delete this write-up? This cannot be undone.',
+                      onConfirm: async () => {
+                        try {
+                          await api.deleteWriteup(domainWriteup._id);
+                          setDomainWriteup(null);
+                          toast('Write-up deleted');
+                        } catch (e) { toastError(e); }
+                        finally { setConfirm(null); }
+                      },
+                    })}>Delete</Button>
+                  )}
+                </>
+              ) : (
+                <Button variant="cyan" size="sm" onClick={() => setShowWriteupForm(true)}>+ Add write-up</Button>
+              )}
+            </div>
+          </div>
+
+
+        </section>
+      )}
+
       {/* =====================================================
           DOCUMENT LIST
           ===================================================== */}
@@ -916,16 +1070,19 @@ export default function MaterialsPage() {
                 style={{
                   cursor: 'pointer',
                 }}
-                onClick={() =>
-                  nav(`/document/${documentId}`)
-                }
+              // onClick={() =>
+              //   nav(`/document/${documentId}`)
+              // }
               >
                 {/* DOCUMENT HEADER */}
                 <div className="row gap-12">
                   <div
                     style={{
-                      fontSize: 26,
+                      fontSize: 20,
                       flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
                   >
                     {fileIcon(doc.originalName)}
@@ -935,11 +1092,13 @@ export default function MaterialsPage() {
                     style={{
                       flex: 1,
                       minWidth: 0,
+                      height: 40,
                     }}
                   >
                     <div
                       style={{
                         fontWeight: 700,
+                        fontSize: 12,
                         color: 'var(--navy)',
                       }}
                     >
@@ -949,7 +1108,7 @@ export default function MaterialsPage() {
                     <div
                       className="muted"
                       style={{
-                        fontSize: 12,
+                        fontSize: 10,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1000,7 +1159,13 @@ export default function MaterialsPage() {
                       <Button
                         variant="danger"
                         size="sm"
-                        onClick={() => remove(doc)}
+                        onClick={() => setConfirm({
+                          message: `Do you really want to delete "${doc.title || doc.originalName}"? This cannot be undone.`,
+                          onConfirm: async () => {
+                            await remove(doc);
+                            setConfirm(null);
+                          },
+                        })}
                       >
                         Delete
                       </Button>
@@ -1036,6 +1201,103 @@ export default function MaterialsPage() {
           onClose={() => setPreviewDoc(null)}
         />
       )}
+
+      {showChecklist && domainChecklist && (
+        <Modal title={domainChecklist.title || 'Checklist'} onClose={() => setShowChecklist(false)} fullScreen>
+          <div className="row gap-8" style={{ justifyContent: 'flex-end', marginBottom: 12 }}>
+            {isAdmin && (<Button variant="danger" size="sm" onClick={async () => {
+              if (!window.confirm('Delete this checklist?')) return;
+              try {
+                await api.deleteChecklist(domainChecklist._id);
+                setDomainChecklist(null);
+                setShowChecklist(false);
+                toast('Checklist deleted');
+              } catch (e) { toastError(e); }
+            }}>Delete</Button>)}
+          </div>
+
+          {(() => {
+            const items = domainChecklist.items || [];
+            if (items.length === 0) return <div className="muted">This checklist has no items.</div>;
+
+            // group: section -> topic -> items
+            const secs = {};
+            items.forEach((it) => {
+              const s = it.section || it.category || 'General';
+              const t = it.topic || 'Single scenario';
+              secs[s] = secs[s] || { code: it.code || '', topics: {} };
+              if (!secs[s].code && it.code) secs[s].code = it.code;
+              (secs[s].topics[t] = secs[s].topics[t] || []).push(it);
+            });
+
+            return Object.entries(secs).map(([sName, sec]) => (
+              <div key={sName} style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#102a56', marginBottom: 8 }}>
+                  {sName}{sec.code ? ` (${sec.code})` : ''}
+                </div>
+                {Object.entries(sec.topics).map(([tName, list]) => (
+                  <div key={tName} style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0aa7c5', textTransform: 'uppercase', marginBottom: 6 }}>
+                      {tName}
+                    </div>
+                    {list.map((it, i) => (
+                      <div key={it._id || i} style={{ padding: '8px 0', borderBottom: '1px solid #eef2f7', fontSize: 13, color: '#334155' }}>
+                        {it.text}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ));
+          })()}
+        </Modal>
+      )}
+
+      {showChecklistForm && (
+        <ChecklistModal
+          domainId={filter}
+          onClose={() => setShowChecklistForm(false)}
+          onDone={async () => {
+            setShowChecklistForm(false);
+            const r = await api.checklistForDomain(filter);
+            setDomainChecklist(r.checklist);
+          }}
+        />
+      )}
+
+      {showWriteup && domainWriteup && (
+        <Modal title={domainWriteup.title || 'Write-up'} onClose={() => setShowWriteup(false)} fullScreen>
+          {(domainWriteup.questions || []).map((q, i) => (
+            <div key={q._id || i} style={{ padding: '10px 0', borderBottom: '1px solid #eef2f7' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#102a56' }}>Q{i + 1}. {q.text}</div>
+              {q.section && q.section !== 'General' && (
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{q.section}</div>
+              )}
+            </div>
+          ))}
+        </Modal>
+      )}
+
+      {showWriteupForm && (
+        <WriteupModal
+          domainId={filter}
+          onClose={() => setShowWriteupForm(false)}
+          onDone={async () => {
+            setShowWriteupForm(false);
+            const r = await api.writeupForDomain(filter);
+            setDomainWriteup(r.writeup);
+          }}
+        />
+      )}
+
+      {confirm && (
+        <ConfirmModal
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onClose={() => setConfirm(null)}
+        />
+      )}
+
     </>
   );
 }
@@ -1487,7 +1749,7 @@ function FilePreviewModal({ doc, onClose }) {
       {/* ===================================================
           UNSUPPORTED
           =================================================== */}
-      {!loading &&
+      {/* {!loading &&
         !error &&
         previewUrl &&
         !isPdf &&
@@ -1529,7 +1791,7 @@ function FilePreviewModal({ doc, onClose }) {
               </a>
             )}
           </div>
-        )}
+        )} */}
     </Modal>
   );
 }
