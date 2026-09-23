@@ -10,6 +10,7 @@ const NAV = {
     { to: '/materials', label: 'Materials', icon: '📁' },
     { to: '/domains', label: 'Domains', icon: '🗂️' },
     { to: '/community', label: 'Community', icon: '💬' },
+    { to: '/logs', label: 'Activity logs', icon: '🧾' },
     { to: '/account', label: 'Account', icon: '⚙️' },
   ],
   manager: [
@@ -17,6 +18,7 @@ const NAV = {
     { to: '/people', label: 'My Team', icon: '👥' },
     { to: '/materials', label: 'Materials', icon: '📁' },
     { to: '/community', label: 'Community', icon: '💬' },
+    { to: '/logs', label: 'Activity logs', icon: '🧾' },
     { to: '/account', label: 'Account', icon: '⚙️' },
   ],
   employee: [

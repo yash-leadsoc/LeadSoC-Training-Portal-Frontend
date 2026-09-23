@@ -82,6 +82,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { LoadingPage } from './components/ui';
 import Layout from './components/Layout';
+import {useEffect} from 'react';
 
 import Login from './pages/Login';
 import CohortDashboard from './pages/shared/CohortDashboard';
@@ -98,6 +99,7 @@ import DomainDetail from './pages/employee/DomainDetail';
 import DoChecklist from './pages/employee/DoChecklist';
 import DoWriteup from './pages/employee/DoWriteup';
 import MyProgress from './pages/employee/MyProgress';
+import LogsPage from './pages/shared/LogsPage';
 
 function AdminRoutes() {
   return (
@@ -110,6 +112,7 @@ function AdminRoutes() {
       <Route path="/employee/:id" element={<EmployeeDetail />} />
       <Route path="/employee/:id/domain/:domainId/checklist" element={<ChecklistView />} />
       <Route path="/community" element={<Community />} />
+      <Route path="/logs" element={<LogsPage />} />
       <Route path="/account" element={<AccountPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -126,6 +129,7 @@ function ManagerRoutes() {
       <Route path="/employee/:id" element={<EmployeeDetail />} />
       <Route path="/employee/:id/domain/:domainId/checklist" element={<ChecklistView />} />
       <Route path="/community" element={<Community />} />
+      <Route path="/logs" element={<LogsPage />} />
       <Route path="/account" element={<AccountPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -149,6 +153,25 @@ function EmployeeRoutes() {
 
 export default function App() {
   const { user, loading } = useAuth();
+
+  useEffect(() => {
+    const blockContext = (e) => e.preventDefault();
+    const blockKeys = (e) => {
+      const k = (e.key || '').toUpperCase();
+      if (k === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(k)) ||
+        (e.ctrlKey && k === 'U')) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('contextmenu', blockContext);
+    document.addEventListener('keydown', blockKeys);
+    return () => {
+      document.removeEventListener('contextmenu', blockContext);
+      document.removeEventListener('keydown', blockKeys);
+    };
+  }, []);
+
 
   if (loading) return <LoadingPage />;
   if (!user) return <Login />;

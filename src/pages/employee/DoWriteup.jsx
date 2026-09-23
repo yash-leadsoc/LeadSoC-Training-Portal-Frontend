@@ -34,6 +34,60 @@ export default function DoWriteup() {
     })(); // eslint-disable-next-line
   }, [id]);
 
+  useEffect(() => {
+  let leftAt = null;
+
+  const leave = (reason) => {
+    leftAt = Date.now();
+    api.logAuditEvent({
+      action: 'writeup.focus_lost',
+      entity: 'writeup',
+      entityId: id,
+      entityLabel: writeup?.title,
+      meta: { reason, at: new Date().toISOString() },
+    }).catch(() => {});
+  };
+
+  const back = () => {
+    const awayMs = leftAt ? Date.now() - leftAt : 0;
+    leftAt = null;
+    api.logAuditEvent({
+      action: 'writeup.focus_returned',
+      entity: 'writeup',
+      entityId: id,
+      entityLabel: writeup?.title,
+      meta: { awayMs },
+    }).catch(() => {});
+  };
+
+  const onVisibility = () => {
+    if (document.visibilityState === 'hidden') {
+      // tab is no longer showing → switched tab or minimized
+      leave('switched tab or minimized window');
+    } else if (leftAt) {
+      back();
+    }
+  };
+
+  const onBlur = () => {
+    // window lost focus but may still be visible → another window/app on top
+    if (document.visibilityState !== 'hidden' && !leftAt) {
+      leave('switched to another window or app');
+    }
+  };
+
+  const onFocus = () => { if (leftAt) back(); };
+
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('blur', onBlur);
+  window.addEventListener('focus', onFocus);
+  return () => {
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('blur', onBlur);
+    window.removeEventListener('focus', onFocus);
+  };
+}, [id, writeup]);
+
   if (loading) return <LoadingPage />;
   if (!writeup) return <Empty>Write-up not found.</Empty>;
 
@@ -59,8 +113,30 @@ export default function DoWriteup() {
   };
 
   let n = 0;
+
+
+  const guard = {
+    onCopy: (e) => e.preventDefault(),
+    onCut: (e) => e.preventDefault(),
+    onContextMenu: (e) => e.preventDefault(),
+    onKeyDown: (e) => {
+      const k = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'x', 'u', 's', 'p'].includes(k)) {
+        // allow inside the answer textarea only
+        if (e.target.tagName !== 'TEXTAREA') e.preventDefault();
+      }
+    },
+  };
+
   return (
-    <>
+    <div
+      {...guard}
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        msUserSelect: 'none',
+      }}
+    >
       <button className="btn link" onClick={() => nav(-1)} style={{ marginBottom: 12 }}>← Back</button>
       <div className="page-head" style={{ display: 'flex', alignItems: 'flex-end' }}>
         <div style={{ flex: 1 }}>
@@ -88,8 +164,14 @@ export default function DoWriteup() {
                   <textarea
                     className="textarea"
                     value={answers[qid]}
+                    style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
                     onChange={(e) => setAnswers((a) => ({ ...a, [qid]: e.target.value }))}
                     placeholder="Type your answer here…"
+                    onCopy={(e) => e.preventDefault()}
+                    onPaste={(e) => e.preventDefault()}
+                    onCut={(e) => e.preventDefault()}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDrop={(e) => e.preventDefault()}
                   />
                 </div>
               );
@@ -101,6 +183,6 @@ export default function DoWriteup() {
       <div style={{ marginTop: 16 }}>
         <Button variant="cyan" block onClick={save} disabled={saving}>{saving ? <Spinner sm /> : 'Save answers'}</Button>
       </div>
-    </>
+    </div>
   );
 }

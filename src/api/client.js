@@ -661,6 +661,14 @@ deleteWriteup: (id) => del(`/writeups/${id}`),
   deleteChecklist: (id) => del(`/checklists/${id}`),
   // api/client.js
 createChecklist: (title, domainId, items) => post('/checklists', { title, domainId, items }),
+
+
+listAudit: (params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+  return get(`/audit${qs ? `?${qs}` : ''}`);
+},
+logAuditEvent: (payload) => post('/audit/event', payload),
+
 };
 
 // normalize the various id fields the backend returns
