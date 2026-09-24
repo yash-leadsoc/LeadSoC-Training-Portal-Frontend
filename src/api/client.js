@@ -638,8 +638,8 @@ export const api = {
   myWriteupAnswer: (id) => get(`/writeups/${id}/my-answer`),
   saveWriteupAnswer: (id, answers) => put(`/writeups/${id}/my-answer`, { answers }),
   writeupForDomain: (domainId) => get(`/writeups/domain/${domainId}`),
-createWriteup: (title, domainId, questions) => post('/writeups', { title, domainId, questions }),
-deleteWriteup: (id) => del(`/writeups/${id}`),
+  createWriteup: (title, domainId, questions) => post('/writeups', { title, domainId, questions }),
+  deleteWriteup: (id) => del(`/writeups/${id}`),
 
   // tracking
   myProgress: () => get('/tracking/me'),
@@ -660,14 +660,23 @@ deleteWriteup: (id) => del(`/writeups/${id}`),
   updateChecklist: (id, title, items) => put(`/checklists/${id}`, { title, items }),
   deleteChecklist: (id) => del(`/checklists/${id}`),
   // api/client.js
-createChecklist: (title, domainId, items) => post('/checklists', { title, domainId, items }),
+  createChecklist: (title, domainId, items) => post('/checklists', { title, domainId, items }),
 
 
-listAudit: (params = {}) => {
-  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
-  return get(`/audit${qs ? `?${qs}` : ''}`);
+  listAudit: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+    return get(`/audit${qs ? `?${qs}` : ''}`);
+  },
+  logAuditEvent: (payload) => post('/audit/event', payload),
+  auditInsights: (params = {}) => {
+  const qs = new URLSearchParams(Object.entries(params).filter(([,v]) => v!=='' && v!=null)).toString();
+  return get(`/audit/insights${qs ? `?${qs}` : ''}`);
 },
-logAuditEvent: (payload) => post('/audit/event', payload),
+
+  updateChecklist: (id, title, items) => put(`/checklists/${id}`, { title, items }),
+  updateWriteup: (id, title, questions) => put(`/writeups/${id}`, { title, questions }),
+  
+
 
 };
 

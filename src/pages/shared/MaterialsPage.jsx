@@ -745,7 +745,8 @@ export default function MaterialsPage() {
   const { toast, toastError } = useToast();
   const nav = useNavigate();
   const { user } = useAuth();
-
+  const [editChecklist, setEditChecklist] = useState(null);
+  const [editWriteup, setEditWriteup] = useState(null);
   const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
 
   /*
@@ -754,50 +755,39 @@ export default function MaterialsPage() {
    * ---------------------------------------------------------
    */
   const load = async () => {
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const [domainsResponse, documentsResponse] = await Promise.all([
-        api.listDomains(),
-        api.listDocuments(filter || undefined),
-      ]);
+  try {
+    // always load domains
+    const domainsResponse = await api.listDomains();
+    const domainList = Array.isArray(domainsResponse)
+      ? domainsResponse
+      : Array.isArray(domainsResponse?.domains)
+        ? domainsResponse.domains
+        : [];
+    setDomains(domainList);
 
-      console.log('Domains API:', domainsResponse);
-      console.log('Documents API:', documentsResponse);
-
-      /*
-       * API may return:
-       * { domains: [...] }
-       * OR directly [...]
-       */
-      const domainList = Array.isArray(domainsResponse)
-        ? domainsResponse
-        : Array.isArray(domainsResponse?.domains)
-          ? domainsResponse.domains
-          : [];
-
-      /*
-       * API may return:
-       * { documents: [...] }
-       * OR directly [...]
-       */
+    // only fetch documents once a domain is selected
+    if (filter) {
+      const documentsResponse = await api.listDocuments(filter);
       const documentList = Array.isArray(documentsResponse)
         ? documentsResponse
         : Array.isArray(documentsResponse?.documents)
           ? documentsResponse.documents
           : [];
-
-      setDomains(domainList);
       setDocs(documentList);
-    } catch (e) {
-      console.error('Materials load error:', e);
-      toastError(e);
-      setDomains([]);
-      setDocs([]);
-    } finally {
-      setLoading(false);
+    } else {
+      setDocs([]); // nothing selected yet → show nothing
     }
-  };
+  } catch (e) {
+    console.error('Materials load error:', e);
+    toastError(e);
+    setDomains([]);
+    setDocs([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     load();
@@ -814,6 +804,19 @@ export default function MaterialsPage() {
     if (!filter) { setDomainChecklist(null); return; }
     api.checklistForDomain(filter).then(r => setDomainChecklist(r.checklist)).catch(() => setDomainChecklist(null));
   }, [filter]);
+
+  useEffect(() => {
+    if (domains.length === 0) {
+      if (filter) setFilter('');      // no domains → clear selection
+      return;
+    }
+    // if nothing selected, or the selected one no longer exists, pick index 0
+    const stillExists = domains.some((d) => uid(d) === filter);
+    if (!filter || !stillExists) {
+      setFilter(uid(domains[0]));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [domains]);
 
   /*
    * ---------------------------------------------------------
@@ -943,12 +946,12 @@ export default function MaterialsPage() {
           DOMAIN FILTERS
           ===================================================== */}
       <div className="chips">
-        <button
+        {/* <button
           className={`chip ${!filter ? 'active' : ''}`}
           onClick={() => setFilter('')}
         >
           All
-        </button>
+        </button> */}
 
         {domains.map((domain) => {
           const domainId = uid(domain);
@@ -984,6 +987,7 @@ export default function MaterialsPage() {
               {domainChecklist ? (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => setShowChecklist(true)}>👁 View</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setEditChecklist(domainChecklist)}>✏️ Edit</Button>
                   {isAdmin && (
                     <Button variant="danger" size="sm" onClick={() => setConfirm({
                       message: 'Do you really want to delete this checklist? This cannot be undone.',
@@ -1025,6 +1029,10 @@ export default function MaterialsPage() {
               {domainWriteup ? (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => setShowWriteup(true)}>👁 View</Button>
+
+                  {['admin', 'manager'].includes(String(user?.role || '').toLowerCase()) && (
+                    <Button variant="ghost" size="sm" onClick={() => { console.log('editWriteup:', domainWriteup); setEditWriteup(domainWriteup); }}>✏️ Edit</Button>
+                  )}
                   {isAdmin && (
                     <Button variant="danger" size="sm" onClick={() => setConfirm({
                       message: 'Do you really want to delete this write-up? This cannot be undone.',
@@ -1178,6 +1186,31 @@ export default function MaterialsPage() {
         </div>
       )}
 
+
+      {editWriteup && (
+        <WriteupModal
+          key={editWriteup._id}
+          existing={editWriteup}
+          onClose={() => setEditWriteup(null)}
+          onDone={async () => {
+            setEditWriteup(null);
+            const r = await api.writeupForDomain(filter);
+            setDomainWriteup(r.writeup);
+          }}
+        />
+      )}
+
+      {editChecklist && (
+        <ChecklistModal
+          existing={editChecklist}
+          onClose={() => setEditChecklist(null)}
+          onDone={async () => {
+            setEditChecklist(null);
+            const r = await api.checklistForDomain(filter);
+            setDomainChecklist(r.checklist);
+          }}
+        />
+      )}
       {/* =====================================================
           UPLOAD MODAL
           ===================================================== */}

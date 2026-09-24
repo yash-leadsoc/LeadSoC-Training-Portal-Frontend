@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { LoadingPage, Empty, Badge, Button } from '../../components/ui';
 import { useToast } from '../../components/Toast';
+import LogInsights from './LogsInsights';
 
 const ACTIONS = ['', 'create', 'update', 'delete', 'login', 'writeup.focus_lost'];
 const ENTITIES = ['', 'checklist', 'writeup', 'document', 'domain', 'user', 'auth'];
@@ -23,7 +24,7 @@ export default function LogsPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [page, setPage] = useState(1);
-
+  const [view, setView] = useState('logs');
   const load = async () => {
     setLoading(true);
     try {
@@ -58,8 +59,17 @@ export default function LogsPage() {
         <h1>Activity logs</h1>
         <p>Every create, update and delete — plus write-up focus events.</p>
       </div>
+      <div className="tabs" style={{ marginBottom: 14 }}>
+        <button className={`tab ${view === 'logs' ? 'active' : ''}`} onClick={() => setView('logs')}>Logs</button>
+        <button className={`tab ${view === 'insights' ? 'active' : ''}`} onClick={() => setView('insights')}>Insights</button>
+      </div>
 
-      {/* FILTERS */}
+
+{view === 'insights' ? (
+  <LogInsights />
+) : (<>
+
+{/* FILTERS */}
       <section className="card" style={{ padding: 14, marginBottom: 14 }}>
         <form onSubmit={applySearch} className="row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="field" style={{ margin: 0 }}>
@@ -143,6 +153,11 @@ export default function LogsPage() {
           </div>
         </>
       )}
+
+
+</>)}
+
+      
     </>
   );
 }
